@@ -1,35 +1,21 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { ScrollCanvas } from "./components/ScrollCanvas";
+import { TOTAL_SCENES } from "./constants/sceneConfig";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      {/* Three.js canvas — fixed behind everything */}
+      <ScrollCanvas />
+
+      {/* Scroll spacer — drives scroll distance for all scenes */}
+      <div
+        className="relative z-10 pointer-events-none"
+        style={{ height: `${TOTAL_SCENES * 100}vh` }}
+      >
+        {/* Scene text overlays will go here */}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
