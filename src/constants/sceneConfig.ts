@@ -1,5 +1,3 @@
-import type { SceneConfig } from "../types/scene";
-
 /** Total number of scenes (7 + epilogue) */
 export const TOTAL_SCENES = 8;
 
@@ -23,24 +21,3 @@ export const ROOM = {
   height: 3,
   depth: 8,
 } as const;
-
-/** Scene 1 — The Alarm */
-export const SCENE1_CONFIG: SceneConfig = {
-  name: "The Alarm",
-  fog: {
-    color: 0x2d2d3f,
-    near: 2,
-    far: 15,
-  },
-  camera: {
-    position: [0, 2.8, 0], // top-down, looking at ceiling
-    lookAt: [0, 0, 0],
-    fov: 50,
-  },
-  colors: {
-    background: 0x1a1a2e,
-    ambient: 0x4a4a6a,
-    key: 0x6b7b8d,
-    accent: 0xff3333,
-  },
-};
