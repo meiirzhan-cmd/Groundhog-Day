@@ -7,12 +7,17 @@ import { createCeilingCracks } from "../../objects/CeilingCracks";
 import { createDustParticles, updateDustParticles } from "../../objects/DustParticles";
 import { createSteamParticles, updateSteamParticles } from "../../objects/SteamParticles";
 import { createRoomLights } from "../../lights/roomLights";
+import { createLightShaft, updateLightShaft } from "../../objects/LightShaft";
+import { createClockLED, updateClockLED } from "../../objects/ClockLED";
 import { lerp } from "../../utils/math";
 
 /** Refs to animated objects — needed for update() and dispose() */
 let dustPoints: THREE.Points | null = null;
 let steamPoints: THREE.Points | null = null;
+let lightShaftGroup: THREE.Group | null = null;
+let clockLEDMesh: THREE.Mesh | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
+let elapsedTime = 0;
 
 /**
  * Scene 1 — "The Alarm"
@@ -41,6 +46,13 @@ export const alarmScene: SceneModule = {
     steamPoints.position.y += 0.1; // just above the rim
     scene.add(steamPoints);
 
+    // --- Light shaft from window ---
+    lightShaftGroup = createLightShaft();
+    scene.add(lightShaftGroup);
+
+    // --- Clock LED display (will be attached to alarm clock model once loaded) ---
+    clockLEDMesh = createClockLED();
+
     // --- Load GLB models ---
     const loader = new GLTFLoader();
 
@@ -55,6 +67,11 @@ export const alarmScene: SceneModule = {
           child.receiveShadow = true;
         }
       });
+      // Attach LED display to the front of the alarm clock
+      if (clockLEDMesh) {
+        clockLEDMesh.position.set(0, 0.08, 0.06); // front face offset — tweak per model
+        model.add(clockLEDMesh);
+      }
       scene.add(model);
     });
 
@@ -74,9 +91,18 @@ export const alarmScene: SceneModule = {
   },
 
   update(progress: number, delta: number) {
+    // --- Track elapsed time ---
+    elapsedTime += delta;
+
     // --- Animate particles ---
     if (dustPoints) updateDustParticles(dustPoints, delta);
     if (steamPoints) updateSteamParticles(steamPoints, delta);
+
+    // --- Animate light shaft ---
+    if (lightShaftGroup) updateLightShaft(lightShaftGroup, elapsedTime);
+
+    // --- Animate clock LED blink ---
+    if (clockLEDMesh) updateClockLED(clockLEDMesh, elapsedTime);
 
     // --- Camera path driven by scroll progress ---
     if (!camera) return;
@@ -101,7 +127,10 @@ export const alarmScene: SceneModule = {
   dispose() {
     dustPoints = null;
     steamPoints = null;
+    lightShaftGroup = null;
+    clockLEDMesh = null;
     camera = null;
+    elapsedTime = 0;
   },
 };
 
