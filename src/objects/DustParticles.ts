@@ -30,15 +30,28 @@ export function createDustParticles(): THREE.Points {
   geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
   geometry.setAttribute("aOpacity", new THREE.BufferAttribute(opacities, 1));
 
+  // Create a soft circle texture procedurally
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d")!;
+  const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.4, "rgba(255,255,255,0.4)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 32, 32);
+  const dustTexture = new THREE.CanvasTexture(canvas);
+
   const material = new THREE.PointsMaterial({
     color: 0x8888aa,
-    size: 0.04,
+    size: 0.015,
     sizeAttenuation: true,
     transparent: true,
-    opacity: 0.4,
+    opacity: 0.3,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
-    // If you have a dust texture: map: new THREE.TextureLoader().load("/textures/dust-particle.png"),
+    map: dustTexture,
   });
 
   const points = new THREE.Points(geometry, material);

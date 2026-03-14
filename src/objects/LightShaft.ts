@@ -11,17 +11,17 @@ export function createLightShaft(): THREE.Group {
 
   // Window position on the right wall
   const windowX = ROOM.width / 2;
-  const windowY = ROOM.height * 0.65;
-  const windowZ = 0;
+  const windowY = ROOM.height * 0.6;
+  const windowZ = -1;
 
-  // --- Main shaft: cone projecting inward from window ---
-  const shaftLength = ROOM.width * 0.8;
-  const shaftGeo = new THREE.ConeGeometry(1.8, shaftLength, 32, 1, true);
+  // --- Main shaft: narrow cone projecting inward from window ---
+  const shaftLength = 3;
+  const shaftGeo = new THREE.ConeGeometry(0.8, shaftLength, 16, 1, true);
 
   const shaftMat = new THREE.MeshBasicMaterial({
     color: 0x7a8faa,
     transparent: true,
-    opacity: 0.06,
+    opacity: 0.035,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     side: THREE.DoubleSide,
@@ -32,38 +32,18 @@ export function createLightShaft(): THREE.Group {
 
   // Rotate so cone points from right wall toward left
   shaft.rotation.z = Math.PI / 2;
-  // Tilt downward slightly — light falls toward the floor
-  shaft.rotation.x = Math.PI * 0.08;
+  // Tilt downward — light falls toward the floor
+  shaft.rotation.x = Math.PI * 0.12;
   shaft.position.set(windowX - shaftLength / 2, windowY - 0.3, windowZ);
 
   group.add(shaft);
 
-  // --- Secondary, wider soft glow for ambient scatter ---
-  const glowGeo = new THREE.ConeGeometry(2.5, shaftLength * 0.7, 32, 1, true);
-
-  const glowMat = new THREE.MeshBasicMaterial({
-    color: 0x6a7f9a,
-    transparent: true,
-    opacity: 0.03,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-  });
-
-  const glow = new THREE.Mesh(glowGeo, glowMat);
-  glow.name = "shaft-glow";
-  glow.rotation.z = Math.PI / 2;
-  glow.rotation.x = Math.PI * 0.05;
-  glow.position.set(windowX - shaftLength * 0.35, windowY - 0.5, windowZ);
-
-  group.add(glow);
-
   // --- Window bright spot: small plane on the right wall ---
-  const spotGeo = new THREE.PlaneGeometry(0.9, 1.2);
+  const spotGeo = new THREE.PlaneGeometry(0.6, 0.8);
   const spotMat = new THREE.MeshBasicMaterial({
     color: 0xaabbcc,
     transparent: true,
-    opacity: 0.15,
+    opacity: 0.1,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
@@ -84,15 +64,9 @@ export function createLightShaft(): THREE.Group {
  */
 export function updateLightShaft(group: THREE.Group, time: number): void {
   const shaft = group.getObjectByName("shaft-main") as THREE.Mesh | undefined;
-  const glow = group.getObjectByName("shaft-glow") as THREE.Mesh | undefined;
 
   if (shaft) {
     const mat = shaft.material as THREE.MeshBasicMaterial;
-    mat.opacity = 0.06 + Math.sin(time * 0.3) * 0.015;
-  }
-
-  if (glow) {
-    const mat = glow.material as THREE.MeshBasicMaterial;
-    mat.opacity = 0.03 + Math.sin(time * 0.2 + 1) * 0.008;
+    mat.opacity = 0.035 + Math.sin(time * 0.3) * 0.01;
   }
 }
