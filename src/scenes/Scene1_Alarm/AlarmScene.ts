@@ -1,7 +1,15 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { SceneModule } from "../../types/scene";
-import { SCENE1_CONFIG, CAMERA_KEYFRAMES, MUG_POSITION, ALARM_POSITION } from "./config";
+import {
+  SCENE1_CONFIG,
+  CAMERA_KEYFRAMES,
+  MUG_POSITION,
+  ALARM_POSITION,
+  BED_POSITION,
+  BEDSIDE_POSITION,
+  WINDOW_POSITION,
+} from "./config";
 import { createRoom } from "../../objects/Room";
 import { createCeilingCracks } from "../../objects/CeilingCracks";
 import { createDustParticles, updateDustParticles } from "../../objects/DustParticles";
@@ -18,6 +26,38 @@ let lightShaftGroup: THREE.Group | null = null;
 let clockLEDMesh: THREE.Mesh | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
 let elapsedTime = 0;
+
+/** Helper: load GLB, log its raw size, apply scale + position */
+function loadModel(
+  loader: GLTFLoader,
+  scene: THREE.Scene,
+  path: string,
+  name: string,
+  position: readonly [number, number, number],
+  scale: number,
+  onLoaded?: (model: THREE.Group) => void,
+) {
+  loader.load(path, (gltf) => {
+    const model = gltf.scene;
+    model.name = name;
+
+    // Debug: log raw bounding box size before scaling
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    console.log(`[${name}] raw size: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}`);
+
+    model.scale.setScalar(scale);
+    model.position.set(...position);
+    model.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    onLoaded?.(model);
+    scene.add(model);
+  });
+}
 
 /**
  * Scene 1 — "The Alarm"
@@ -36,6 +76,10 @@ export const alarmScene: SceneModule = {
     // --- Lighting ---
     scene.add(createRoomLights());
 
+    // --- Debug helpers (remove after positioning is done) ---
+    scene.add(new THREE.GridHelper(10, 10, 0x444444, 0x222222));
+    scene.add(new THREE.AxesHelper(3));
+
     // --- Dust particles ---
     dustPoints = createDustParticles();
     scene.add(dustPoints);
@@ -43,82 +87,53 @@ export const alarmScene: SceneModule = {
     // --- Steam particles (positioned above mug) ---
     steamPoints = createSteamParticles();
     steamPoints.position.set(...MUG_POSITION);
-    steamPoints.position.y += 0.1; // just above the rim
+    steamPoints.position.y += 0.1;
     scene.add(steamPoints);
 
     // --- Light shaft from window ---
     lightShaftGroup = createLightShaft();
     scene.add(lightShaftGroup);
 
-    // --- Clock LED display (will be attached to alarm clock model once loaded) ---
+    // --- Clock LED display ---
     clockLEDMesh = createClockLED();
 
     // --- Load GLB models ---
     const loader = new GLTFLoader();
 
-    loader.load("/models/scene1/Alarm Clock.glb", (gltf) => {
-      const model = gltf.scene;
-      model.name = "alarm-clock";
-      model.position.set(...ALARM_POSITION);
-      model.scale.setScalar(0.5); // adjust based on your Blender export scale
-      model.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      // Attach LED display to the front of the alarm clock
+    loadModel(loader, scene, "/models/scene1/Alarm Clock.glb", "alarm-clock", ALARM_POSITION, 0.15, (model) => {
       if (clockLEDMesh) {
-        clockLEDMesh.position.set(0, 0.08, 0.06); // front face offset — tweak per model
+        clockLEDMesh.position.set(0, 0.08, 0.06);
         model.add(clockLEDMesh);
       }
-      scene.add(model);
     });
 
-    loader.load("/models/scene1/Coffee Cup.glb", (gltf) => {
-      const model = gltf.scene;
-      model.name = "coffee-cup";
-      model.position.set(...MUG_POSITION);
-      model.scale.setScalar(0.5); // adjust based on your Blender export scale
-      model.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      scene.add(model);
+    loadModel(loader, scene, "/models/scene1/Coffee Cup.glb", "coffee-cup", MUG_POSITION, 0.15);
+    loadModel(loader, scene, "/models/scene1/Bed.glb", "bed", BED_POSITION, 0.15);
+    loadModel(loader, scene, "/models/scene1/Bedside.glb", "bedside-table", BEDSIDE_POSITION, 0.15);
+    loadModel(loader, scene, "/models/scene1/Windown.glb", "window-frame", WINDOW_POSITION, 0.15, (model) => {
+      model.rotation.y = -Math.PI / 2;
     });
   },
 
   update(progress: number, delta: number) {
-    // --- Track elapsed time ---
     elapsedTime += delta;
 
-    // --- Animate particles ---
     if (dustPoints) updateDustParticles(dustPoints, delta);
     if (steamPoints) updateSteamParticles(steamPoints, delta);
-
-    // --- Animate light shaft ---
     if (lightShaftGroup) updateLightShaft(lightShaftGroup, elapsedTime);
-
-    // --- Animate clock LED blink ---
     if (clockLEDMesh) updateClockLED(clockLEDMesh, elapsedTime);
 
-    // --- Camera path driven by scroll progress ---
     if (!camera) return;
 
     const kf = CAMERA_KEYFRAMES;
 
     if (progress < 0.4) {
-      // Start → Mid: ceiling to room reveal
       const t = progress / 0.4;
       lerpCamera(camera, kf.start, kf.mid, t);
     } else if (progress < 0.7) {
-      // Mid → Alarm: orbit toward alarm clock
       const t = (progress - 0.4) / 0.3;
       lerpCamera(camera, kf.mid, kf.alarm, t);
     } else {
-      // Alarm → End: pull back to wide shot
       const t = (progress - 0.7) / 0.3;
       lerpCamera(camera, kf.alarm, kf.end, t);
     }

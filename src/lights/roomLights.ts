@@ -36,7 +36,7 @@ export function createRoomLights(): THREE.Group {
   // Alarm clock accent — small red point light
   const alarmGlow = new THREE.PointLight(0xff3333, 0.6, 2.5, 2);
   alarmGlow.name = "alarm-glow";
-  alarmGlow.position.set(1.2, 0.8, -0.3); // bedside table position
+  alarmGlow.position.set(0.7, 0.7, -2); // bedside table position
   alarmGlow.castShadow = false;
   group.add(alarmGlow);
 
