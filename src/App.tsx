@@ -35,6 +35,29 @@ function App() {
             },
           ]}
         />
+
+        {/* Scene 2 — The Rebellion */}
+        <SceneTextOverlay
+          sceneIndex={1}
+          heading="Scene II"
+          subheading="If nothing matters, then everything is permitted."
+          blocks={[
+            {
+              text: "He tries everything to break free. Speed. Recklessness. Excess.",
+            },
+            {
+              text: "He eats what he wants, says what he wants, takes what he wants.",
+              className: "text-white/40",
+            },
+            {
+              text: "The world resets anyway. But the emptiness doesn\u2019t.",
+            },
+            {
+              text: "It carries over. It\u2019s the one thing that survives the loop.",
+              className: "text-white/30 italic",
+            },
+          ]}
+        />
       </div>
     </>
   );
